@@ -1,5 +1,4 @@
 use std::fmt;
-
 pub struct CommandError; 
 
 // Implement std::fmt::Display for CommandError

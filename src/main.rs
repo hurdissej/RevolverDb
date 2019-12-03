@@ -1,10 +1,9 @@
+mod compiler;
+use compiler::simple_compiler::*;
 use std::io::stdin;
 use std::io::Write;
 use std::io::stdout;
-use std::process::*;
-
-mod errors;
-use errors::CommandError::CommandError as CommandError;
+use std::process::exit;
 
 fn main() {
     println!("Welcome to RevolverDB");
@@ -14,24 +13,6 @@ fn main() {
         let command = prepare_command(input).expect("Error whilst parsing input");
         execute_command(command);
     }
-}
-
-//TODO - We need to replace this with a proper parser and grammer
-fn prepare_command(parsed_input: String) -> Result<Command, CommandError> {
-    
-    if parsed_input.starts_with("insert"){
-        return Ok(Command {
-        command_type: CommandType::Insert
-        })
-    }
-
-    if parsed_input.starts_with("select"){
-        return Ok(Command {
-        command_type: CommandType::Select
-        })
-    }
-
-    Err(CommandError)
 }
 
 fn execute_command(cmd: Command) {
@@ -59,16 +40,5 @@ fn get_input() -> String {
             exit(0);
         }
     }
-}
-
-
-struct Command {
-    command_type: CommandType
-}
-
-#[derive(Debug)]
-enum CommandType {
-    Insert, 
-    Select
 }
 
