@@ -4,6 +4,7 @@ use std::io::stdin;
 use std::io::Write;
 use std::io::stdout;
 use std::process::exit;
+use std::str;
 
 fn main() {
     println!("Welcome to RevolverDB");
@@ -16,7 +17,18 @@ fn main() {
 }
 
 fn execute_command(cmd: Command) {
-    println!("This command is a {:?}", cmd.command_type);
+    match cmd.command_type {
+        CommandType::Insert => {
+            let row_to_insert = cmd.row_to_insert.unwrap();
+            println!("This is an insert");
+            println!("ID {}", row_to_insert.id);
+            println!("Email {}", str::from_utf8(&row_to_insert.email).unwrap());
+            println!("Username {}", str::from_utf8(&row_to_insert.username).unwrap());
+        },
+        CommandType::Select => {
+            println!("This is a select");
+        }
+    }
 }
 
 fn print_stub() {
