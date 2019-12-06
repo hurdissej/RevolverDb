@@ -44,12 +44,13 @@ impl Table {
         };
         pages.push(page);
         
-        Table {
+        let t = Table {
             max_page_size: 100, 
             number_of_rows: 0,
             pages: pages
-        }
-        
+        };
+
+        t        
     }
 
     pub fn insert(& mut self, row_to_insert: Row){
