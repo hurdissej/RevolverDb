@@ -1,4 +1,7 @@
 mod compiler;
+use compiler::test_table::Table as Table;
+use compiler::test_table::Page as Page;
+use compiler::test_table::Row as Row;
 use compiler::simple_compiler::*;
 use std::io::stdin;
 use std::io::Write;
@@ -8,25 +11,33 @@ use std::str;
 
 fn main() {
     println!("Welcome to RevolverDB");
+    let mut table = Table::new();
+
     while true {
         let input = get_input();        
         println!("{}", input);
-        let command = prepare_command(input).expect("Error whilst parsing input");
-        execute_command(command);
+        let command = prepare_command(&input).expect("Error whilst parsing input");
+        execute_command(&command, &mut table);
     }
 }
 
-fn execute_command(cmd: Command) {
+fn execute_command(cmd: &Command, table: &mut Table) {
     match cmd.command_type {
         CommandType::Insert => {
-            let row_to_insert = cmd.row_to_insert.unwrap();
+            let row_to_insert = cmd.row_to_insert.clone().unwrap();
             println!("This is an insert");
-            println!("ID {}", row_to_insert.id);
-            println!("Email {}", str::from_utf8(&row_to_insert.email).unwrap());
-            println!("Username {}", str::from_utf8(&row_to_insert.username).unwrap());
+            table.insert(row_to_insert);
         },
         CommandType::Select => {
-            println!("This is a select");
+            
+            for i in 0..table.pages.len() {
+                for j in 0..table.pages[i].rows.len() {
+                    let row = &table.pages[i].rows[j];
+                    let a = str::from_utf8(&row.username).unwrap();
+                    let b = str::from_utf8(&row.email).unwrap();
+                    println!("ID: {}, Username: {}, Email {}", row.id, a, b);
+                }
+            }
         }
     }
 }
