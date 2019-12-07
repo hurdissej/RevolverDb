@@ -1,7 +1,5 @@
 mod compiler;
 use compiler::test_table::Table as Table;
-use compiler::test_table::Page as Page;
-use compiler::test_table::Row as Row;
 use compiler::simple_compiler::*;
 use std::io::stdin;
 use std::io::Write;
@@ -10,16 +8,16 @@ use std::process::exit;
 use std::str;
 
 fn main() {
-    println!("Welcome to RevolverDB");
-    let mut table = Table::new();
-
-    while true {
-        let input = get_input();        
-        println!("{}", input);
-        let command = prepare_command(&input).expect("Error whilst parsing input");
-        execute_command(&command, &mut table);
+        println!("Welcome to RevolverDB");
+        let mut table = Table::new();
+        while true {
+            let input = get_input();        
+            println!("{}", input);
+            let command = prepare_command(&input).expect("Error whilst parsing input");
+            execute_command(&command, &mut table);
+        }
     }
-}
+
 
 fn execute_command(cmd: &Command, table: &mut Table) {
     match cmd.command_type {

@@ -1,4 +1,12 @@
+use std::fs::File;
+use std::io::Write;
+use std::io::Read;
+use std::mem;
+use std::fs::OpenOptions;
+use std::fs;
+
 pub struct Table {
+    pub persistence: File,
     pub max_page_size: i32,
     pub number_of_rows: i32,
     pub pages: Vec<Page>
@@ -36,26 +44,26 @@ impl Row {
 
 impl Table {
     pub fn new() -> Table{
-        let mut pages: Vec<Page> = Vec::new(); //TODO Make into a constructor
-        let rows: Vec<Row> = Vec::new();        
-        let page = Page {
-            full: false,
-            rows: rows
+        return match OpenOptions::new()
+            .read(true)
+            .write(true)
+            .create(true).open("db.db") {
+            Ok(table) => build_table(table),
+            Err(err) =>  panic!(err)
         };
-        pages.push(page);
-        
-        let t = Table {
-            max_page_size: 100, 
-            number_of_rows: 0,
-            pages: pages
-        };
-
-        t        
+    }
+    //TODO handle errors
+    pub fn persist(& mut self, row_to_insert: &Row)
+    {    
+        self.persistence.write(&row_to_insert.id.to_le_bytes()).unwrap();
+        self.persistence.write(row_to_insert.username.as_slice()).unwrap();
+        self.persistence.write(row_to_insert.email.as_slice()).unwrap();
     }
 
     pub fn insert(& mut self, row_to_insert: Row){
         let index_for_page = self.pages.len() - 1;
         if !self.pages[index_for_page].full {
+            &self.persist(&row_to_insert);
             self.pages[index_for_page].rows.push(row_to_insert);
         } else {
             let mut rows: Vec<Row> = Vec::new();
@@ -66,8 +74,58 @@ impl Table {
             };
             //TODO Check if it is full now
             &self.pages.push(page);
+
         }
     }
+}
+
+fn read_row(offset: usize) -> Row {
+    
+    let mut buffer = [0; 291];
+    let mut file = OpenOptions::new()
+            .read(true)
+            .write(true)
+            .create(true).open("db.db").unwrap(); 
+    
+    file.read(&mut buffer).unwrap();
+    let mut a: [u8; 4] = Default::default();
+    a.copy_from_slice(&buffer[offset..offset+4]);
+    let id = unsafe{ mem::transmute::<[u8; 4], i32>(a) };
+    let username = &buffer[offset+4..offset+35].to_vec();
+    let email = &buffer[offset+36..offset+290].to_vec();
+
+    Row {
+        id: id,
+        username: username.clone(),
+        email: email.clone()
+    }
+}
+
+fn build_table(db_file: File) -> Table {
+    let num = fs::metadata("db.db").unwrap().len() / 291;
+    let mut offset = 0;
+    let mut rows: Vec<Row> = Vec::new();        
+
+    for row in 0..num {
+        let row = read_row(offset);
+        rows.push(row);
+        offset += 292;
+    }
+
+    let mut pages: Vec<Page> = Vec::new();
+    
+    let page = Page {
+        full: false,
+        rows: rows
+    };
+
+    pages.push(page);
+    Table {
+        persistence: db_file,
+        max_page_size: 100, 
+        number_of_rows: 0,
+        pages: pages
+    }        
 }
 
 fn to_bytes(input: &str, size: usize) -> Vec<u8> {
