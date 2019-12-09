@@ -46,7 +46,7 @@ impl Table {
     pub fn new() -> Table{
         return match OpenOptions::new()
             .read(true)
-            .write(true)
+            .append(true)
             .create(true).open("db.db") {
             Ok(table) => build_table(table),
             Err(err) =>  panic!(err)
@@ -72,32 +72,10 @@ impl Table {
                 full: false,
                 rows: rows
             };
+
             //TODO Check if it is full now
             &self.pages.push(page);
-
         }
-    }
-}
-
-fn read_row(offset: usize) -> Row {
-    
-    let mut buffer = [0; 291];
-    let mut file = OpenOptions::new()
-            .read(true)
-            .write(true)
-            .create(true).open("db.db").unwrap(); 
-    
-    file.read(&mut buffer).unwrap();
-    let mut a: [u8; 4] = Default::default();
-    a.copy_from_slice(&buffer[offset..offset+4]);
-    let id = unsafe{ mem::transmute::<[u8; 4], i32>(a) };
-    let username = &buffer[offset+4..offset+35].to_vec();
-    let email = &buffer[offset+36..offset+290].to_vec();
-
-    Row {
-        id: id,
-        username: username.clone(),
-        email: email.clone()
     }
 }
 
@@ -105,11 +83,21 @@ fn build_table(db_file: File) -> Table {
     let num = fs::metadata("db.db").unwrap().len() / 291;
     let mut offset = 0;
     let mut rows: Vec<Row> = Vec::new();        
+    println!("{}", num);
 
-    for row in 0..num {
-        let row = read_row(offset);
+    let mut buffer: Vec<u8> = Vec::new();
+    let mut file = OpenOptions::new()
+            .read(true)
+            .write(true)
+            .create(true)
+            .open("db.db").unwrap(); 
+    
+    file.read_to_end(&mut buffer).unwrap();
+
+    for _row in 0..num {
+        let row = read_row(&buffer[offset..offset+291]);
         rows.push(row);
-        offset += 292;
+        offset += 291;
     }
 
     let mut pages: Vec<Page> = Vec::new();
@@ -128,10 +116,24 @@ fn build_table(db_file: File) -> Table {
     }        
 }
 
+fn read_row(row: &[u8]) -> Row {
+    let mut a: [u8; 4] = Default::default();
+    a.copy_from_slice(&row[0..4]);
+    let id = unsafe{ mem::transmute::<[u8; 4], i32>(a) };
+    let username = &row[4..35].to_vec();
+    let email = &row[36..290].to_vec();
+
+    Row {
+        id: id,
+        username: username.clone(),
+        email: email.clone()
+    }
+}
+
 fn to_bytes(input: &str, size: usize) -> Vec<u8> {
         let mut a:Vec<u8> = std::iter::repeat(0).take(size).collect::<Vec<_>>();
         let bytes_to_copy = input.as_bytes();
-
+        
         if bytes_to_copy.len() > size {
             panic!("Too long");
         }

@@ -10,7 +10,7 @@ use std::str;
 fn main() {
         println!("Welcome to RevolverDB");
         let mut table = Table::new();
-        while true {
+        loop {
             let input = get_input();        
             println!("{}", input);
             let command = prepare_command(&input).expect("Error whilst parsing input");
@@ -31,9 +31,11 @@ fn execute_command(cmd: &Command, table: &mut Table) {
             for i in 0..table.pages.len() {
                 for j in 0..table.pages[i].rows.len() {
                     let row = &table.pages[i].rows[j];
-                    let a = str::from_utf8(&row.username).unwrap();
-                    let b = str::from_utf8(&row.email).unwrap();
-                    println!("ID: {}, Username: {}, Email {}", row.id, a, b);
+                    println!(
+                        "ID: {}, Username: {}, Email {}", 
+                        row.id, 
+                        str::from_utf8(&row.username).unwrap(), 
+                        str::from_utf8(&row.email).unwrap());
                 }
             }
         }
